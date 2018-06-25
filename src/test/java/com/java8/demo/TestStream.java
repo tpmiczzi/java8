@@ -11,7 +11,7 @@ import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class TestStream extends DemoApplicationTests{
+public class TestStream extends DemoApplicationTests {
 
     private Collection<User> getCollectionUsers() {
         return Arrays.asList(
@@ -438,6 +438,65 @@ public class TestStream extends DemoApplicationTests{
                 .max(Comparator.comparing(User::getId));
 
         System.out.println(res);
+    }
+
+    @Test
+    public void onlyNumber() {
+        String start = "12 text var2 14 8v 1";
+        String result = "";
+
+        result = Arrays.stream(start.split(" "))
+                .filter(c -> isNumeric(c))
+                .collect(Collectors.joining(" "));
+
+        System.out.println(result);
+
+        Assert.assertEquals("12 14 1", result);
+    }
+
+    public static boolean isNumeric(String str) {
+        try {
+            int num = Integer.parseInt(str);
+
+            return true;
+        } catch (NumberFormatException nfe) {
+            return false;
+        }
+    }
+
+    @Test
+    public void searchCountWord() {
+        String start = "test world privet world who when world word word World five WORLD";
+
+        Long result = Arrays.stream(start.split(" "))
+                .map(s -> s.toLowerCase())
+                .filter(c -> c.equals("world"))
+                .count();
+
+        Assert.assertEquals("5", result.toString());
+    }
+
+    @Test
+    public void createQuery() {
+//        String start = "{\"name\", \"Ivanov\", \"country\", \"Ukraine\", \"city\", \"Kiev\", \"age\", null}";
+//        List<String> startlist = new ArrayList(){{
+//            add("name");
+//            add("Ivanov");
+//            add("country");
+//            add("Ukraine");
+//            add("city");
+//            add("Kiev");
+//            add("age");
+//            add("null");
+//        }};
+
+//        String result =
+//                Arrays.stream(start.split(", "))
+//                .forEach(s -> System.out.println(s));
+
+//        startlist.stream()
+//                .
+//        Assert.assertEquals("\"name = 'Ivanov' and country = 'Ukraine' and city = 'Kiev'\"", result);
     }
 
 
