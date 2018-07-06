@@ -1,15 +1,20 @@
 package com.java8.demo;
 
-import com.java8.demo.model.EqualsUser;
-import com.java8.demo.model.Role;
-import com.java8.demo.model.User;
+import com.java8.demo.model.*;
 import org.junit.Assert;
 import org.junit.Test;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 
 import java.util.*;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
+
+import static java.util.stream.Collectors.groupingBy;
+import static java.util.stream.Collectors.summingLong;
 
 public class TestStream extends DemoApplicationTests {
 
@@ -468,10 +473,18 @@ public class TestStream extends DemoApplicationTests {
     public void searchCountWord() {
         String start = "test world privet world who when world word word World five WORLD";
 
+        AtomicLong cntBeforeFilter = new AtomicLong();
+        AtomicLong cntAfterFilter = new AtomicLong();
+
         Long result = Arrays.stream(start.split(" "))
                 .map(s -> s.toLowerCase())
+                .peek(x -> cntBeforeFilter.incrementAndGet())
                 .filter(c -> c.equals("world"))
+                .peek(x -> cntAfterFilter.incrementAndGet())
                 .count();
+
+        System.out.println("BeforeFilter  " + cntBeforeFilter);
+        System.out.println("AfterFilter  " + cntAfterFilter);
 
         Assert.assertEquals("5", result.toString());
     }
@@ -497,6 +510,210 @@ public class TestStream extends DemoApplicationTests {
 //        startlist.stream()
 //                .
 //        Assert.assertEquals("\"name = 'Ivanov' and country = 'Ukraine' and city = 'Kiev'\"", result);
+    }
+
+    public class IndexValue<T> {
+        public final int index;
+        public final T value;
+
+        public IndexValue(int index, T value) {
+            this.index = index;
+            this.value = value;
+        }
+
+        @Override
+        public String toString() {
+            return "IndexValue{" +
+                    "index=" + index +
+                    ", value=" + value +
+                    '}';
+        }
+    }
+
+    @Test
+    public void listWithIndex() {
+        List<Object> list = new ArrayList() {{
+            add("test1");
+            add("test2");
+            add("test3");
+        }};
+
+        List<IndexValue<Object>> stream = IntStream.range(0, list.size())
+                .mapToObj(idx -> new IndexValue<>(idx, list.get(idx)))
+                .collect(Collectors.toList());
+
+        stream.forEach(System.out::println);
+    }
+
+    @Test
+    public void streamIndex() {
+        Collection<User> users = getCollectionUsers();
+
+        List<User> listUser = new ArrayList<>();
+
+        users.stream()
+                .forEach(x -> listUser.add(x));
+
+        IntStream.range(0, listUser.size())
+                .map(i -> {
+                    Long id = listUser.get(i).getId();
+                    return Math.toIntExact(id) + 1000;
+                })
+                .forEach(s -> System.out.println(s));
+    }
+
+    @Test
+    public void generateListField() {
+        List<List<String>> input = Arrays.asList(Arrays.asList("a", "b", "c"), Arrays.asList("x", "y"), Arrays.asList("1", "2", "3"));
+
+        Stream<String> stringStream =
+                input.get(0).stream().flatMap(a ->
+                        input.get(1).stream().flatMap(b ->
+                                input.get(2).stream().map(c -> a + b + c)
+                        )
+                );
+
+        stringStream.forEach(System.out::println);
+    }
+
+    @Test
+    public void getAllElementCurrentClass() {
+        Collection<User> users = getCollectionUsers();
+
+        List<Object> listUser = new ArrayList<>();
+
+        users.stream()
+                .forEach(x -> listUser.add(x));
+
+        listUser.add(new EqualsUser(7, "equalsUser 7", Role.GUEST));
+        listUser.add(new EqualsUser(8, "equalsUser 8", Role.GUEST));
+
+//        IntStream.range(0, listUser.size())
+//                .mapToObj();
+    }
+
+    @Test
+    public void savePhoto() {
+//        EnumSet<DocumentName> allowableNameFileArray = EnumSet.of(
+//                DocumentName.IDCARDWITHCUSTOMER,
+//                DocumentName.DECLARATION,
+//                DocumentName.INVOICE,
+//                DocumentName.IDCARD
+//        );
+//
+//        EnumSet<DocumentName> realyApplicationDocList = EnumSet.of(
+//                DocumentName.IDCARDWITHCUSTOMER,
+//                DocumentName.DECLARATION,
+//                DocumentName.INVOICE,
+//                DocumentName.IDCARD
+//        );
+//
+//        boolean isAllPhoto = allowableNameFileArray.stream()
+//                .allMatch(y -> realyApplicationDocList.stream().
+//                        anyMatch(x -> x.equals(y)));
+
+
+        Set<DocumentName> allowableNameFileSet = EnumSet.of(
+                DocumentName.IDCARDWITHCUSTOMER,
+                DocumentName.DECLARATION,
+                DocumentName.INVOICE,
+                DocumentName.IDCARD
+        );
+
+        List<String> applicationDocList = new ArrayList() {{
+//            add("IDCARDWITHCUSTOMER");
+//            add("DECLARATION");
+//            add("INVOICE");
+//            add("IDCARD");
+        }};
+
+        Set<DocumentName> set = applicationDocList.stream()
+                .map(DocumentName::valueOf)
+                .collect(Collectors.toSet());
+
+        Set<DocumentName> reallyApplicationDocListSet = null;
+
+        if (set.size() > 0) {
+            reallyApplicationDocListSet = EnumSet.copyOf(
+                    set
+            );
+
+        }
+
+        boolean isAllPhoto = allowableNameFileSet.containsAll(reallyApplicationDocListSet);
+
+        System.out.println(isAllPhoto);
+    }
+
+    public enum DocumentName {
+
+        IDCARDWITHCUSTOMER,
+
+        DECLARATION,
+
+        INVOICE,
+
+        IDCARD,
+
+        CONTRACT,
+
+        PHOTO_CONTRACT,
+
+        PHOTO_SCORING1,
+
+        PHOTO_SCORING2
+    }
+
+    @Test
+    public void getSumSalary() {
+        Department itDepartment = new Department("development");
+        Department testingDepartment = new Department("testing");
+        Department finDepartment = new Department("finance");
+
+        Employee employee1 = new Employee("Pasha", itDepartment, 100L);
+        Employee employee2 = new Employee("Sasha", itDepartment, 200L);
+        Employee employee3 = new Employee("Koly", itDepartment, 300L);
+        Employee employee4 = new Employee("Maks", itDepartment, 400L);
+        Employee employee5 = new Employee("Oly", testingDepartment, 100L);
+        Employee employee6 = new Employee("Koko", testingDepartment, 200L);
+        Employee employee7 = new Employee("Artem", testingDepartment, 300L);
+        Employee employee8 = new Employee("Yallia", finDepartment, 100L);
+        Employee employee9 = new Employee("Natasha", finDepartment, 100L);
+
+        List<Employee> employees = new ArrayList<>();
+        employees.add(employee1);
+        employees.add(employee2);
+        employees.add(employee3);
+        employees.add(employee4);
+        employees.add(employee5);
+        employees.add(employee6);
+        employees.add(employee7);
+        employees.add(employee8);
+        employees.add(employee9);
+
+        Map<Department, Long> deptSalaries = employees.stream()
+                .collect(Collectors.groupingBy(Employee::getDepartment, summingLong(Employee::getSalary)));
+
+        Map<Department, Long> result = deptSalaries.entrySet().stream()
+                .filter(e -> e.getValue() > 500)
+                .sorted(Map.Entry.comparingByValue(Comparator.reverseOrder()))
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue,
+                        (a, b) -> a));
+
+        System.out.println(result);
+    }
+
+    @Test
+    public void testShop(){
+        List<String> list = new ArrayList<>();
+        list.add("milk");
+        list.add("bread");
+        list.add("meet");
+        list.subList(0, 2);
+        Stream<String> stream = list.stream();
+
+        list.add("eggs");
+        stream.forEach(System.out::println);
     }
 
 
